@@ -1,0 +1,6 @@
+# Minimalistic CBOR decoder implementation
+
+config NANOCBOR
+	bool "NanoCBOR Support"
+	help
+	  This option enables the NanoCBOR library.

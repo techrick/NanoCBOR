@@ -1,0 +1,5 @@
+name: nanocbor
+
+build:
+  cmake: .
+  kconfig: Kconfig
