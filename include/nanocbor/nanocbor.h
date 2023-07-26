@@ -33,6 +33,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <zephyr/dsp/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,6 +56,11 @@ extern "C" {
 #define NANOCBOR_TYPE_TAG (0x06U) /**< tag type */
 #define NANOCBOR_TYPE_FLOAT (0x07U) /**< float type */
 /** @} */
+
+static const char *nanocbor_type_str[]
+    = { "NANOCBOR_TYPE_UINT", "NANOCBOR_TYPE_NINT", "NANOCBOR_TYPE_BSTR",
+        "NANOCBOR_TYPE_TSTR", "NANOCBOR_TYPE_ARR",  "NANOCBOR_TYPE_MAP",
+        "NANOCBOR_TYPE_TAG",  "NANOCBOR_TYPE_FLOAT" };
 
 /**
  * @name CBOR major types including the bit shift
@@ -858,6 +864,54 @@ int nanocbor_fmt_double(nanocbor_encoder_t *enc, double num);
  * @return              Number of bytes written
  */
 int nanocbor_fmt_decimal_frac(nanocbor_encoder_t *enc, int32_t e, int32_t m);
+
+int nanocbor_print(uint8_t *buffer, size_t len, bool pretty);
+
+int nanocbor_get_key_uint(nanocbor_value_t *start, uint32_t key,
+                          nanocbor_value_t *value);
+
+#define _nanocbor_fmt_generic(enc, val, ...) \
+    _Generic((val),                          \
+        bool: nanocbor_fmt_bool,             \
+        int8_t: nanocbor_fmt_int,            \
+        int16_t: nanocbor_fmt_int,           \
+        int32_t: nanocbor_fmt_int,           \
+        int64_t: nanocbor_fmt_int,           \
+        uint8_t: nanocbor_fmt_uint,          \
+        uint16_t: nanocbor_fmt_uint,         \
+        uint32_t: nanocbor_fmt_uint,         \
+        uint64_t: nanocbor_fmt_uint,         \
+        float: nanocbor_fmt_float,           \
+        double: nanocbor_fmt_double,         \
+        default: 0)(enc, val)
+
+#define nanocbor_fmt_generic(enc, x, ...) \
+    _Generic((x),                         \
+        bool: nanocbor_fmt_bool,          \
+        int8_t: nanocbor_fmt_int,         \
+        int16_t: nanocbor_fmt_int,        \
+        int32_t: nanocbor_fmt_int,        \
+        int64_t: nanocbor_fmt_int,        \
+        uint8_t: nanocbor_fmt_uint,       \
+        uint16_t: nanocbor_fmt_uint,      \
+        uint32_t: nanocbor_fmt_uint,      \
+        uint64_t: nanocbor_fmt_uint,      \
+        float16_t: nanocbor_fmt_float,    \
+        float32_t: nanocbor_fmt_float,    \
+        float64_t: nanocbor_fmt_double,   \
+        char *: nanocbor_put_tstr,        \
+        const char *: nanocbor_put_tstr,  \
+        default: nanocbor_put_bstr)(enc, x, ##__VA_ARGS__)
+
+#define nanocbor_map_add_kv(enc, key, ...) \
+    ((nanocbor_fmt_generic(enc, key))      \
+     | (nanocbor_fmt_generic(enc, ##__VA_ARGS__)))
+
+#define _nanocbor_map_add_kv(enc, key, ...)       \
+    ({                                            \
+        nanocbor_fmt_generic(enc, key);           \
+        nanocbor_fmt_generic(enc, ##__VA_ARGS__); \
+    })
 
 /** @} */
 
